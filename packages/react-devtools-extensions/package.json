@@ -70,5 +70,9 @@
   },
   "dependencies": {
     "web-ext": "^8"
+  },
+  "volta": {
+    "node": "20.19.0",
+    "yarn": "1.22.22"
   }
 }
