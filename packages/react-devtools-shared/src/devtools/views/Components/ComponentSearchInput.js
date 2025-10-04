@@ -45,8 +45,12 @@ export default function ComponentSearchInput(): React.Node {
 
   const search = useCallback(
     (text: string) => {
-      setLocalSearchQuery(text);
-      transitionDispatch({ type: 'SET_SEARCH_TEXT', payload: text });
+      // 过滤输入：只允许 ASCII 字母、数字、空格和正则表达式常用字符
+      // 允许的字符：a-z A-Z 0-9 空格 / . * + ? ^ $ { } [ ] ( ) | \ - _
+      const filteredText = text.replace(/[^\x00-\x7F]/g, '');
+
+      setLocalSearchQuery(filteredText);
+      transitionDispatch({ type: 'SET_SEARCH_TEXT', payload: filteredText });
     },
     [setLocalSearchQuery, transitionDispatch],
   );
