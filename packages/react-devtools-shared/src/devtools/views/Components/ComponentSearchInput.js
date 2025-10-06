@@ -19,29 +19,41 @@ import {
   localStorageGetItem,
   localStorageSetItem,
 } from 'react-devtools-shared/src/storage';
+import { useDomain } from './DomainContext';
+import { getSearchKeyForDomain } from '../../utils/domainUtils';
 
 const LOCAL_STORAGE_SEARCH_KEY = 'React::DevTools::componentSearchText';
 
 export default function ComponentSearchInput(): React.Node {
-  // 从 localStorage 读取初始值
-  const [localSearchQuery, setLocalSearchQuery] = useState(() => {
-    return localStorageGetItem(LOCAL_STORAGE_SEARCH_KEY) || '';
-  });
+  const { currentDomain } = useDomain();
   const { searchIndex, searchResults } = useContext(TreeStateContext);
   const transitionDispatch = useContext(TreeDispatcherContext);
 
-  // 当搜索内容变化时，保存到 localStorage
-  useEffect(() => {
-    localStorageSetItem(LOCAL_STORAGE_SEARCH_KEY, localSearchQuery);
-  }, [localSearchQuery]);
+  // 生成当前域名对应的 localStorage key
+  const storageKey = getSearchKeyForDomain(currentDomain);
 
-  // 初始化时如果有缓存的搜索内容，触发搜索
+  // 从 localStorage 读取初始值（基于当前域名）
+  const [localSearchQuery, setLocalSearchQuery] = useState(() => {
+    return localStorageGetItem(storageKey) || '';
+  });
+
+  // 当域名变化时，加载对应域名的搜索历史
   useEffect(() => {
-    if (localSearchQuery) {
-      transitionDispatch({ type: 'SET_SEARCH_TEXT', payload: localSearchQuery });
+    const domainSearchQuery = localStorageGetItem(storageKey) || '';
+    setLocalSearchQuery(domainSearchQuery);
+    // 如果有缓存的搜索内容，触发搜索
+    if (domainSearchQuery) {
+      transitionDispatch({ type: 'SET_SEARCH_TEXT', payload: domainSearchQuery });
+    } else {
+      // 清空搜索
+      transitionDispatch({ type: 'SET_SEARCH_TEXT', payload: '' });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // 只在组件挂载时执行一次
+  }, [currentDomain, storageKey, transitionDispatch]);
+
+  // 当搜索内容变化时，保存到 localStorage（使用当前域名的 key）
+  useEffect(() => {
+    localStorageSetItem(storageKey, localSearchQuery);
+  }, [localSearchQuery, storageKey]);
 
   const search = useCallback(
     (text: string) => {

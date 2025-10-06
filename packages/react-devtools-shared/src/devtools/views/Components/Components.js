@@ -8,23 +8,24 @@
  */
 
 import * as React from 'react';
-import {Fragment, useEffect, useLayoutEffect, useReducer, useRef} from 'react';
+import { Fragment, useEffect, useLayoutEffect, useReducer, useRef } from 'react';
 import Tree from './Tree';
-import {OwnersListContextController} from './OwnersListContext';
+import { OwnersListContextController } from './OwnersListContext';
 import portaledContent from '../portaledContent';
-import {SettingsModalContextController} from 'react-devtools-shared/src/devtools/views/Settings/SettingsModalContext';
+import { SettingsModalContextController } from 'react-devtools-shared/src/devtools/views/Settings/SettingsModalContext';
 import {
   localStorageGetItem,
   localStorageSetItem,
 } from 'react-devtools-shared/src/storage';
 import InspectedElementErrorBoundary from './InspectedElementErrorBoundary';
 import InspectedElement from './InspectedElement';
-import {ModalDialog} from '../ModalDialog';
+import { ModalDialog } from '../ModalDialog';
 import SettingsModal from 'react-devtools-shared/src/devtools/views/Settings/SettingsModal';
-import {NativeStyleContextController} from './NativeStyleEditor/context';
+import { NativeStyleContextController } from './NativeStyleEditor/context';
+import { DomainContextProvider } from './DomainContext';
 
 import styles from './Components.css';
-import typeof {SyntheticPointerEvent} from 'react-dom-bindings/src/events/SyntheticEvent';
+import typeof { SyntheticPointerEvent } from 'react-dom-bindings/src/events/SyntheticEvent';
 
 type Orientation = 'horizontal' | 'vertical';
 
@@ -43,17 +44,21 @@ type ResizeState = {
   verticalPercentage: number,
 };
 
-function Components(_: {}) {
-  const wrapperElementRef = useRef<null | HTMLElement>(null);
-  const resizeElementRef = useRef<null | HTMLElement>(null);
+type Props = {
+  currentDomain?: string,
+};
 
-  const [state, dispatch] = useReducer<ResizeState, any, ResizeAction>(
+function Components({ currentDomain = 'default' }: Props) {
+  const wrapperElementRef = useRef < null | HTMLElement > (null);
+  const resizeElementRef = useRef < null | HTMLElement > (null);
+
+  const [state, dispatch] = useReducer < ResizeState, any, ResizeAction> (
     resizeReducer,
     null,
     initResizeState,
   );
 
-  const {horizontalPercentage, verticalPercentage} = state;
+  const { horizontalPercentage, verticalPercentage } = state;
 
   useLayoutEffect(() => {
     const resizeElement = resizeElementRef.current;
@@ -108,7 +113,7 @@ function Components(_: {}) {
 
     const orientation = getOrientation(wrapperElement);
 
-    const {height, width, left, top} = wrapperElement.getBoundingClientRect();
+    const { height, width, left, top } = wrapperElement.getBoundingClientRect();
 
     const currentMousePosition =
       orientation === 'horizontal' ? event.clientX - left : event.clientY - top;
@@ -141,34 +146,36 @@ function Components(_: {}) {
   };
 
   return (
-    <SettingsModalContextController>
-      <OwnersListContextController>
-        <div ref={wrapperElementRef} className={styles.Components}>
-          <Fragment>
-            <div ref={resizeElementRef} className={styles.TreeWrapper}>
-              <Tree />
-            </div>
-            <div className={styles.ResizeBarWrapper}>
-              <div
-                onPointerDown={onResizeStart}
-                onPointerMove={onResize}
-                onPointerUp={onResizeEnd}
-                className={styles.ResizeBar}
-              />
-            </div>
-            <div className={styles.InspectedElementWrapper}>
-              <NativeStyleContextController>
-                <InspectedElementErrorBoundary>
-                  <InspectedElement />
-                </InspectedElementErrorBoundary>
-              </NativeStyleContextController>
-            </div>
-            <ModalDialog />
-            <SettingsModal />
-          </Fragment>
-        </div>
-      </OwnersListContextController>
-    </SettingsModalContextController>
+    <DomainContextProvider initialDomain={currentDomain}>
+      <SettingsModalContextController>
+        <OwnersListContextController>
+          <div ref={wrapperElementRef} className={styles.Components}>
+            <Fragment>
+              <div ref={resizeElementRef} className={styles.TreeWrapper}>
+                <Tree />
+              </div>
+              <div className={styles.ResizeBarWrapper}>
+                <div
+                  onPointerDown={onResizeStart}
+                  onPointerMove={onResize}
+                  onPointerUp={onResizeEnd}
+                  className={styles.ResizeBar}
+                />
+              </div>
+              <div className={styles.InspectedElementWrapper}>
+                <NativeStyleContextController>
+                  <InspectedElementErrorBoundary>
+                    <InspectedElement />
+                  </InspectedElementErrorBoundary>
+                </NativeStyleContextController>
+              </div>
+              <ModalDialog />
+              <SettingsModal />
+            </Fragment>
+          </div>
+        </OwnersListContextController>
+      </SettingsModalContextController>
+    </DomainContextProvider>
   );
 }
 
@@ -187,7 +194,7 @@ function initResizeState(): ResizeState {
       horizontalPercentage = data.horizontalPercentage;
       verticalPercentage = data.verticalPercentage;
     }
-  } catch (error) {}
+  } catch (error) { }
 
   return {
     horizontalPercentage,
@@ -216,7 +223,7 @@ function getOrientation(
   wrapperElement: null | HTMLElement,
 ): null | Orientation {
   if (wrapperElement != null) {
-    const {width} = wrapperElement.getBoundingClientRect();
+    const { width } = wrapperElement.getBoundingClientRect();
     return width > VERTICAL_MODE_MAX_WIDTH ? 'horizontal' : 'vertical';
   }
   return null;

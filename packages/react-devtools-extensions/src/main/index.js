@@ -1,13 +1,13 @@
 /* global chrome */
 
-import type {SourceSelection} from 'react-devtools-shared/src/devtools/views/Editor/EditorPane';
+import type { SourceSelection } from 'react-devtools-shared/src/devtools/views/Editor/EditorPane';
 
-import {createElement} from 'react';
-import {flushSync} from 'react-dom';
-import {createRoot} from 'react-dom/client';
+import { createElement } from 'react';
+import { flushSync } from 'react-dom';
+import { createRoot } from 'react-dom/client';
 import Bridge from 'react-devtools-shared/src/bridge';
 import Store from 'react-devtools-shared/src/devtools/store';
-import {getBrowserTheme} from '../utils';
+import { getBrowserTheme } from '../utils';
 import {
   localStorageGetItem,
   localStorageSetItem,
@@ -17,22 +17,23 @@ import {
   LOCAL_STORAGE_SUPPORTS_PROFILING_KEY,
   LOCAL_STORAGE_TRACE_UPDATES_ENABLED_KEY,
 } from 'react-devtools-shared/src/constants';
-import {logEvent} from 'react-devtools-shared/src/Logger';
+import { logEvent } from 'react-devtools-shared/src/Logger';
 import {
   getAlwaysOpenInEditor,
   getOpenInEditorURL,
   normalizeUrlIfValid,
 } from 'react-devtools-shared/src/utils';
-import {checkConditions} from 'react-devtools-shared/src/devtools/views/Editor/utils';
+import { extractDomainFromURL } from 'react-devtools-shared/src/devtools/utils/domainUtils';
+import { checkConditions } from 'react-devtools-shared/src/devtools/views/Editor/utils';
 import * as parseHookNames from 'react-devtools-shared/src/hooks/parseHookNames';
 
 import {
   setBrowserSelectionFromReact,
   setReactSelectionFromBrowser,
 } from './elementSelection';
-import {viewAttributeSource} from './sourceSelection';
+import { viewAttributeSource } from './sourceSelection';
 
-import {startReactPolling} from './reactPolling';
+import { startReactPolling } from './reactPolling';
 import cloneStyleTags from './cloneStyleTags';
 import fetchFileWithCaching from './fetchFileWithCaching';
 import injectBackendManager from './injectBackendManager';
@@ -64,7 +65,7 @@ function createBridge() {
     },
 
     send(event: string, payload: any, transferable?: Array<any>) {
-      port?.postMessage({event, payload}, transferable);
+      port?.postMessage({ event, payload }, transferable);
     },
   });
 
@@ -146,7 +147,7 @@ function createBridge() {
 function createBridgeAndStore() {
   createBridge();
 
-  const {isProfiling} = getProfilingFlags();
+  const { isProfiling } = getProfilingFlags();
 
   store = new Store(bridge, {
     isProfiling,
@@ -197,31 +198,54 @@ function createBridgeAndStore() {
 
   root = createRoot(document.createElement('div'));
 
+  // 获取当前域名的辅助函数
+  const getCurrentDomain = callback => {
+    try {
+      chrome.devtools.inspectedWindow.eval(
+        'window.location.href',
+        (result, isException) => {
+          if (!isException && result) {
+            callback(extractDomainFromURL(result));
+          } else {
+            callback('default');
+          }
+        }
+      );
+    } catch (error) {
+      console.warn('Failed to get inspected window URL:', error);
+      callback('default');
+    }
+  };
+
   render = (overrideTab = mostRecentOverrideTab) => {
     mostRecentOverrideTab = overrideTab;
 
-    root.render(
-      createElement(DevTools, {
-        bridge,
-        browserTheme: getBrowserTheme(),
-        componentsPortalContainer,
-        profilerPortalContainer,
-        editorPortalContainer,
-        currentSelectedSource,
-        enabledInspectedElementContextMenu: true,
-        fetchFileWithCaching,
-        hookNamesModuleLoaderFunction,
-        overrideTab,
-        showTabBar: false,
-        store,
-        suspensePortalContainer,
-        warnIfUnsupportedVersionDetected: true,
-        viewAttributeSourceFunction,
-        // Firefox doesn't support chrome.devtools.panels.openResource yet
-        canViewElementSourceFunction: () => __IS_CHROME__ || __IS_EDGE__,
-        viewElementSourceFunction,
-      }),
-    );
+    // 获取当前域名并渲染
+    getCurrentDomain(currentDomain => {
+      root.render(
+        createElement(DevTools, {
+          bridge,
+          browserTheme: getBrowserTheme(),
+          componentsPortalContainer,
+          profilerPortalContainer,
+          editorPortalContainer,
+          currentSelectedSource,
+          currentDomain,
+          enabledInspectedElementContextMenu: true,
+          fetchFileWithCaching,
+          hookNamesModuleLoaderFunction,
+          overrideTab,
+          showTabBar: false,
+          store,
+          suspensePortalContainer,
+          warnIfUnsupportedVersionDetected: true,
+          viewAttributeSourceFunction,
+          // Firefox doesn't support chrome.devtools.panels.openResource yet
+          canViewElementSourceFunction: () => __IS_CHROME__ || __IS_EDGE__,
+          viewElementSourceFunction,
+        }),
+      );
+    });
   };
 }
 
@@ -263,7 +287,7 @@ function createComponentsPanel() {
           render('components');
           portal.injectStyles(cloneStyleTags);
 
-          logEvent({event_name: 'selected-components-tab'});
+          logEvent({ event_name: 'selected-components-tab' });
         }
       });
 
@@ -306,7 +330,7 @@ function createProfilerPanel() {
           render('profiler');
           portal.injectStyles(cloneStyleTags);
 
-          logEvent({event_name: 'selected-profiler-tab'});
+          logEvent({ event_name: 'selected-profiler-tab' });
         }
       });
     },
@@ -347,7 +371,7 @@ function createSourcesEditorPanel() {
         render();
         portal.injectStyles(cloneStyleTags);
 
-        logEvent({event_name: 'selected-editor-pane'});
+        logEvent({ event_name: 'selected-editor-pane' });
       }
     });
 
@@ -389,7 +413,7 @@ function createSuspensePanel() {
           render('suspense');
           portal.injectStyles(cloneStyleTags);
 
-          logEvent({event_name: 'selected-suspense-tab'});
+          logEvent({ event_name: 'selected-suspense-tab' });
         }
       });
     },
@@ -625,7 +649,7 @@ if (chrome.devtools.panels.setOpenResourceHandler) {
       const editorURL = getOpenInEditorURL();
       if (alwaysOpenInEditor && editorURL) {
         const location = ['', resource.url, lineNumber, columnNumber];
-        const {url, shouldDisableButton} = checkConditions(editorURL, location);
+        const { url, shouldDisableButton } = checkConditions(editorURL, location);
         if (!shouldDisableButton) {
           window.open(url);
           return;

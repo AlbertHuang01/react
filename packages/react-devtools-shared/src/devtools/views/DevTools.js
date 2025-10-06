@@ -13,7 +13,7 @@ import '@reach/menu-button/styles.css';
 import '@reach/tooltip/styles.css';
 
 import * as React from 'react';
-import {useCallback, useEffect, useLayoutEffect, useMemo, useRef} from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 import Store from '../store';
 import {
   BridgeContext,
@@ -26,35 +26,35 @@ import Profiler from './Profiler/Profiler';
 import SuspenseTab from './SuspenseTab/SuspenseTab';
 import TabBar from './TabBar';
 import EditorPane from './Editor/EditorPane';
-import {SettingsContextController} from './Settings/SettingsContext';
-import {TreeContextController} from './Components/TreeContext';
+import { SettingsContextController } from './Settings/SettingsContext';
+import { TreeContextController } from './Components/TreeContext';
 import ViewElementSourceContext from './Components/ViewElementSourceContext';
 import FetchFileWithCachingContext from './Components/FetchFileWithCachingContext';
-import {InspectedElementContextController} from './Components/InspectedElementContext';
+import { InspectedElementContextController } from './Components/InspectedElementContext';
 import HookNamesModuleLoaderContext from 'react-devtools-shared/src/devtools/views/Components/HookNamesModuleLoaderContext';
-import {ProfilerContextController} from './Profiler/ProfilerContext';
-import {SuspenseTreeContextController} from './SuspenseTab/SuspenseTreeContext';
-import {TimelineContextController} from 'react-devtools-timeline/src/TimelineContext';
-import {ModalDialogContextController} from './ModalDialog';
+import { ProfilerContextController } from './Profiler/ProfilerContext';
+import { SuspenseTreeContextController } from './SuspenseTab/SuspenseTreeContext';
+import { TimelineContextController } from 'react-devtools-timeline/src/TimelineContext';
+import { ModalDialogContextController } from './ModalDialog';
 import ReactLogo from './ReactLogo';
 import UnsupportedBridgeProtocolDialog from './UnsupportedBridgeProtocolDialog';
 import UnsupportedVersionDialog from './UnsupportedVersionDialog';
 import WarnIfLegacyBackendDetected from './WarnIfLegacyBackendDetected';
-import {useLocalStorage} from './hooks';
+import { useLocalStorage } from './hooks';
 import ThemeProvider from './ThemeProvider';
-import {LOCAL_STORAGE_DEFAULT_TAB_KEY} from '../../constants';
-import {logEvent} from '../../Logger';
+import { LOCAL_STORAGE_DEFAULT_TAB_KEY } from '../../constants';
+import { logEvent } from '../../Logger';
 
 import styles from './DevTools.css';
 
 import './root.css';
 
-import type {FetchFileWithCaching} from './Components/FetchFileWithCachingContext';
-import type {HookNamesModuleLoaderFunction} from 'react-devtools-shared/src/devtools/views/Components/HookNamesModuleLoaderContext';
-import type {FrontendBridge} from 'react-devtools-shared/src/bridge';
-import type {BrowserTheme} from 'react-devtools-shared/src/frontend/types';
-import type {ReactFunctionLocation, ReactCallSite} from 'shared/ReactTypes';
-import type {SourceSelection} from './Editor/EditorPane';
+import type { FetchFileWithCaching } from './Components/FetchFileWithCachingContext';
+import type { HookNamesModuleLoaderFunction } from 'react-devtools-shared/src/devtools/views/Components/HookNamesModuleLoaderContext';
+import type { FrontendBridge } from 'react-devtools-shared/src/bridge';
+import type { BrowserTheme } from 'react-devtools-shared/src/frontend/types';
+import type { ReactFunctionLocation, ReactCallSite } from 'shared/ReactTypes';
+import type { SourceSelection } from './Editor/EditorPane';
 
 export type TabID = 'components' | 'profiler' | 'suspense';
 
@@ -75,6 +75,7 @@ export type Props = {
   bridge: FrontendBridge,
   browserTheme?: BrowserTheme,
   canViewElementSourceFunction?: ?CanViewElementSource,
+  currentDomain?: string,
   defaultTab?: TabID,
   enabledInspectedElementContextMenu?: boolean,
   showTabBar?: boolean,
@@ -154,6 +155,7 @@ export default function DevTools({
   browserTheme = 'light',
   canViewElementSourceFunction,
   componentsPortalContainer,
+  currentDomain = 'default',
   editorPortalContainer,
   profilerPortalContainer,
   suspensePortalContainer,
@@ -176,7 +178,7 @@ export default function DevTools({
   hideLogAction,
   hideViewSourceAction,
 }: Props): React.Node {
-  const [currentTab, setTab] = useLocalStorage<TabID>(
+  const [currentTab, setTab] = useLocalStorage < TabID > (
     LOCAL_STORAGE_DEFAULT_TAB_KEY,
     defaultTab,
   );
@@ -197,11 +199,11 @@ export default function DevTools({
       // the browser devtools panel changes.
       if (showTabBar === true) {
         if (tabId === 'components') {
-          logEvent({event_name: 'selected-components-tab'});
+          logEvent({ event_name: 'selected-components-tab' });
         } else if (tabId === 'suspense') {
-          logEvent({event_name: 'selected-suspense-tab'});
+          logEvent({ event_name: 'selected-suspense-tab' });
         } else {
-          logEvent({event_name: 'selected-profiler-tab'});
+          logEvent({ event_name: 'selected-profiler-tab' });
         }
       }
       setTab(tabId);
@@ -244,7 +246,7 @@ export default function DevTools({
     [enabledInspectedElementContextMenu, viewAttributeSourceFunction],
   );
 
-  const devToolsRef = useRef<HTMLElement | null>(null);
+  const devToolsRef = useRef < HTMLElement | null > (null);
 
   useEffect(() => {
     if (!showTabBar) {
@@ -298,7 +300,7 @@ export default function DevTools({
   }, [bridge]);
 
   useEffect(() => {
-    logEvent({event_name: 'loaded-dev-tools'});
+    logEvent({ event_name: 'loaded-dev-tools' });
   }, []);
 
   return (
@@ -347,6 +349,7 @@ export default function DevTools({
                                       className={styles.TabContent}
                                       hidden={tab !== 'components'}>
                                       <Components
+                                        currentDomain={currentDomain}
                                         portalContainer={
                                           componentsPortalContainer
                                         }
